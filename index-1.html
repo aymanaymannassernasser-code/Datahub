@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>DataHub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Azeret+Mono:wght@300;400;600;700&family=Bebas+Neue&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg: #0c0c0e;
+  --s1: #141416;
+  --s2: #1a1a1e;
+  --border: #28282e;
+  --accent: #00e5ff;
+  --accent2: #ff3d6e;
+  --text: #e8e8f0;
+  --muted: #4a4a58;
+  --mono: 'Azeret Mono', monospace;
+  --display: 'Bebas Neue', cursive;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--mono);min-height:100vh;display:flex;flex-direction:column;overflow-x:hidden}
+
+/* scanline overlay */
+body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,229,255,0.012) 2px,rgba(0,229,255,0.012) 4px);pointer-events:none;z-index:999}
+
+header{display:flex;align-items:center;justify-content:space-between;padding:18px 28px;border-bottom:1px solid var(--border);position:sticky;top:0;background:rgba(12,12,14,0.95);backdrop-filter:blur(8px);z-index:10}
+.logo{font-family:var(--display);font-size:1.8rem;letter-spacing:0.05em;color:var(--accent);text-shadow:0 0 20px rgba(0,229,255,0.4)}
+.logo span{color:var(--muted);font-size:1rem;font-family:var(--mono);font-weight:300;margin-left:10px;letter-spacing:normal}
+.hdr-right{display:flex;align-items:center;gap:16px}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px var(--accent);animation:blink 1.8s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
+.hdr-stat{font-size:0.68rem;color:var(--muted)}
+
+main{flex:1;display:grid;grid-template-columns:1fr 300px;min-height:0}
+@media(max-width:720px){main{grid-template-columns:1fr}.panel{border-left:none;border-top:1px solid var(--border)}}
+
+/* LEFT */
+.left{padding:24px;display:flex;flex-direction:column;gap:18px}
+
+/* drop zone */
+.drop{border:1px dashed var(--border);border-radius:6px;padding:40px 20px;text-align:center;cursor:pointer;transition:all .2s;background:var(--s1);position:relative;overflow:hidden}
+.drop::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(0,229,255,0.03),transparent);pointer-events:none}
+.drop:hover,.drop.over{border-color:var(--accent);background:#071418;box-shadow:inset 0 0 30px rgba(0,229,255,0.04)}
+.drop.over .drop-inner{opacity:0}
+.drop.over::before{content:'DROP';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--display);font-size:4rem;color:var(--accent);letter-spacing:0.1em}
+.drop-icon{font-size:2rem;margin-bottom:10px}
+.drop h2{font-family:var(--display);font-size:1.6rem;letter-spacing:0.05em;color:var(--accent);margin-bottom:6px}
+.drop p{font-size:0.72rem;color:var(--muted);margin-bottom:18px}
+.tags{display:flex;gap:5px;justify-content:center;flex-wrap:wrap}
+.tag{font-size:0.6rem;padding:2px 8px;border:1px solid var(--border);border-radius:2px;color:var(--muted)}
+input[type=file]{display:none}
+
+/* toolbar */
+.toolbar{display:flex;gap:10px;align-items:center}
+.search{flex:1;background:var(--s1);border:1px solid var(--border);color:var(--text);padding:9px 14px;border-radius:4px;font-family:var(--mono);font-size:0.78rem;outline:none;transition:border-color .15s}
+.search:focus{border-color:var(--accent)}
+.search::placeholder{color:var(--muted)}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:4px;font-family:var(--mono);font-size:0.75rem;font-weight:600;cursor:pointer;border:none;transition:all .15s;white-space:nowrap}
+.btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border)}
+.btn-ghost:hover{border-color:var(--accent2);color:var(--accent2)}
+.btn-accent{background:var(--accent);color:#000}
+.btn-accent:hover{background:#00c8e0}
+
+/* file list */
+.file-list{display:flex;flex-direction:column;gap:6px}
+.file-card{background:var(--s1);border:1px solid var(--border);border-radius:5px;padding:12px 14px;display:flex;align-items:center;gap:12px;transition:border-color .15s;animation:fadeUp .2s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:translateY(0)}}
+.file-card:hover{border-color:#333}
+.ficon{width:38px;height:38px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0}
+.finfo{flex:1;min-width:0}
+.fname{font-size:0.82rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px}
+.fmeta{font-size:0.65rem;color:var(--muted)}
+.factions{display:flex;gap:5px;flex-shrink:0}
+.ibtn{width:30px;height:30px;border-radius:3px;background:transparent;border:1px solid var(--border);color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:0.8rem;transition:all .15s}
+.ibtn:hover{border-color:var(--accent);color:var(--accent)}
+.ibtn.del:hover{border-color:var(--accent2);color:var(--accent2)}
+
+.empty{text-align:center;padding:50px 20px;color:var(--muted);font-size:0.78rem}
+.empty p:first-child{font-size:2rem;margin-bottom:10px}
+
+/* progress bar */
+.progress-wrap{display:none;background:var(--s2);border:1px solid var(--border);border-radius:4px;padding:12px 16px;font-size:0.72rem;color:var(--muted)}
+.progress-wrap.active{display:block}
+.pbar-bg{background:var(--border);border-radius:2px;height:3px;margin-top:8px;overflow:hidden}
+.pbar-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .2s;width:0%}
+
+/* RIGHT panel */
+.panel{border-left:1px solid var(--border);padding:24px;display:flex;flex-direction:column;gap:24px}
+.panel-section h3{font-size:0.62rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
+
+/* storage */
+.stor-bar-bg{background:var(--border);border-radius:2px;height:3px;margin-top:8px}
+.stor-bar-fill{height:100%;background:linear-gradient(90deg,var(--accent),#00ff88);border-radius:2px;transition:width .4s}
+.stor-labels{display:flex;justify-content:space-between;font-size:0.62rem;color:var(--muted);margin-top:5px}
+
+/* note */
+.note-area{background:var(--s1);border:1px solid var(--border);border-radius:4px;padding:10px;font-family:var(--mono);font-size:0.73rem;width:100%;min-height:90px;color:var(--text);outline:none;resize:vertical;transition:border-color .15s;line-height:1.6}
+.note-area:focus{border-color:var(--accent)}
+.note-area::placeholder{color:var(--muted)}
+.note-btns{display:flex;gap:6px;margin-top:8px}
+
+/* connection status */
+.conn-status{display:flex;align-items:center;gap:8px;font-size:0.68rem;color:var(--muted);padding:10px 12px;background:var(--s1);border:1px solid var(--border);border-radius:4px}
+.conn-dot{width:6px;height:6px;border-radius:50%;background:var(--muted)}
+.conn-dot.ok{background:#00ff88;box-shadow:0 0 6px #00ff88}
+.conn-dot.err{background:var(--accent2);box-shadow:0 0 6px var(--accent2)}
+
+/* toast */
+#toast{position:fixed;bottom:20px;right:20px;padding:10px 18px;border-radius:4px;font-size:0.75rem;font-weight:600;transform:translateY(60px);opacity:0;transition:all .25s;z-index:1000;pointer-events:none}
+#toast.show{transform:translateY(0);opacity:1}
+#toast.ok{background:var(--accent);color:#000}
+#toast.err{background:var(--accent2);color:#fff}
+
+/* type colors */
+.t-pdf{background:#1a0a08;color:#ff6b6b}
+.t-word{background:#080d1a;color:#5dade2}
+.t-excel{background:#081a0d;color:#52be80}
+.t-ppt{background:#1a0f05;color:#f39c12}
+.t-img{background:#0f0a1a;color:#bb8fce}
+.t-other{background:#111;color:#888}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">DATAHUB <span>/ personal file sync</span></div>
+  <div class="hdr-right">
+    <div class="conn-dot" id="connDot"></div>
+    <span class="hdr-stat" id="hdrStat">connecting…</span>
+    <div class="live-dot"></div>
+  </div>
+</header>
+
+<main>
+  <div class="left">
+
+    <div class="drop" id="drop">
+      <div class="drop-inner">
+        <div class="drop-icon">⬆</div>
+        <h2>Upload Files</h2>
+        <p>drag & drop or click to browse — any file type</p>
+        <div class="tags">
+          <span class="tag">PDF</span><span class="tag">DOCX</span><span class="tag">XLSX</span>
+          <span class="tag">PPTX</span><span class="tag">JPG</span><span class="tag">PNG</span>
+          <span class="tag">ZIP</span><span class="tag">MP4</span><span class="tag">ANY</span>
+        </div>
+      </div>
+      <input type="file" id="fileInput" multiple/>
+    </div>
+
+    <div class="progress-wrap" id="progressWrap">
+      <span id="progressLabel">Uploading…</span>
+      <div class="pbar-bg"><div class="pbar-fill" id="pbar"></div></div>
+    </div>
+
+    <div class="toolbar">
+      <input class="search" id="searchInput" placeholder="Search files…"/>
+      <button class="btn btn-ghost" onclick="clearDone()">🗑 Clear all</button>
+    </div>
+
+    <div class="file-list" id="fileList">
+      <div class="empty"><p>📡</p><p>Loading files…</p></div>
+    </div>
+
+  </div>
+
+  <div class="panel">
+
+    <div class="panel-section" id="connSection">
+      <h3>⚡ Connection</h3>
+      <div class="conn-status">
+        <div class="conn-dot" id="connDot2"></div>
+        <span id="connLabel">Connecting to Supabase…</span>
+      </div>
+    </div>
+
+    <div class="panel-section">
+      <h3>💾 Storage</h3>
+      <div class="stor-bar-bg">
+        <div class="stor-bar-fill" id="storBar" style="width:0%"></div>
+      </div>
+      <div class="stor-labels">
+        <span id="storUsed">0 MB</span>
+        <span>1 GB free tier</span>
+      </div>
+    </div>
+
+    <div class="panel-section">
+      <h3>📋 Quick note</h3>
+      <textarea class="note-area" id="noteArea" placeholder="Paste text, links, commands…&#10;Auto-saved locally."></textarea>
+      <div class="note-btns">
+        <button class="btn btn-ghost" style="flex:1;justify-content:center" onclick="copyNote()">Copy</button>
+        <button class="btn btn-ghost" style="flex:1;justify-content:center" onclick="clearNote()">Clear</button>
+      </div>
+    </div>
+
+    <div class="panel-section" style="margin-top:auto;border-top:1px solid var(--border);padding-top:20px">
+      <h3>ℹ About</h3>
+      <p style="font-size:0.65rem;color:var(--muted);line-height:1.7">
+        Files stored in <strong style="color:#666">Supabase Storage</strong>.<br>
+        Upload on PC → open this URL on phone → download.<br>
+        Real sync. Any device. Any browser.
+      </p>
+    </div>
+
+  </div>
+</main>
+
+<div id="toast"></div>
+
+<script>
+// ── CONFIG ──────────────────────────────────────────
+const SUPABASE_URL    = 'https://czsinvdfhzvtrvuztbwh.supabase.co';
+const SUPABASE_ANON   = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN6c2ludmRmaHp2dHJ2dXp0YndoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwMjMzNDEsImV4cCI6MjA5NDU5OTM0MX0.kQufSmcc5G3uUIEW1oGkDL-Rs18ts5loKrlw02IaqmU';
+const BUCKET          = 'datahub';
+// ────────────────────────────────────────────────────
+
+const API = `${SUPABASE_URL}/storage/v1`;
+const HDR = { 'Authorization': `Bearer ${SUPABASE_ANON}`, 'apikey': SUPABASE_ANON };
+
+// ── helpers ──
+function fmt(bytes) {
+  if (!bytes) return '0 B';
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024**2) return (bytes/1024).toFixed(1) + ' KB';
+  return (bytes/1024**2).toFixed(2) + ' MB';
+}
+function fmtDate(str) {
+  return new Date(str).toLocaleString([], {dateStyle:'short', timeStyle:'short'});
+}
+function ext(name) { return name.split('.').pop().toLowerCase(); }
+function cat(name) {
+  const e = ext(name);
+  if (e==='pdf') return 'pdf';
+  if (['doc','docx'].includes(e)) return 'word';
+  if (['xls','xlsx','csv'].includes(e)) return 'excel';
+  if (['ppt','pptx'].includes(e)) return 'ppt';
+  if (['jpg','jpeg','png','gif','webp','svg'].includes(e)) return 'img';
+  return 'other';
+}
+function icon(name) {
+  return {pdf:'📄',word:'📝',excel:'📊',ppt:'📑',img:'🖼️',other:'📦'}[cat(name)];
+}
+
+// ── toast ──
+function toast(msg, type='ok') {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.className = 'show ' + type;
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.className = '', 2500);
+}
+
+// ── connection status ──
+function setConn(ok, label) {
+  ['connDot','connDot2'].forEach(id => {
+    const d = document.getElementById(id);
+    d.className = 'conn-dot' + (ok ? ' ok' : ok===false ? ' err' : '');
+  });
+  document.getElementById('connLabel').textContent = label;
+  document.getElementById('hdrStat').textContent = label;
+}
+
+// ── ensure bucket exists ──
+async function ensureBucket() {
+  // try to list — if 404 bucket doesn't exist, create it
+  const r = await fetch(`${API}/object/list/${BUCKET}`, {
+    method:'POST',
+    headers:{...HDR,'Content-Type':'application/json'},
+    body: JSON.stringify({prefix:'',limit:1})
+  });
+  if (r.status === 400 || r.status === 404) {
+    // create bucket (public)
+    await fetch(`${API}/bucket`, {
+      method:'POST',
+      headers:{...HDR,'Content-Type':'application/json'},
+      body: JSON.stringify({id:BUCKET, name:BUCKET, public:true})
+    });
+  }
+}
+
+// ── list files ──
+let allFiles = [];
+
+async function listFiles() {
+  const r = await fetch(`${API}/object/list/${BUCKET}`, {
+    method:'POST',
+    headers:{...HDR,'Content-Type':'application/json'},
+    body: JSON.stringify({prefix:'', limit:200, sortBy:{column:'created_at',order:'desc'}})
+  });
+  if (!r.ok) throw new Error(await r.text());
+  const data = await r.json();
+  // filter out folder placeholders
+  return (data || []).filter(f => f.name && f.metadata);
+}
+
+async function loadFiles() {
+  try {
+    await ensureBucket();
+    allFiles = await listFiles();
+    setConn(true, `Connected · ${allFiles.length} file${allFiles.length!==1?'s':''}`);
+    render(document.getElementById('searchInput').value);
+    updateStorage();
+  } catch(e) {
+    setConn(false, 'Connection failed');
+    toast('Failed to connect to Supabase', 'err');
+    document.getElementById('fileList').innerHTML = `<div class="empty"><p>⚠️</p><p>${e.message}</p></div>`;
+  }
+}
+
+// ── render ──
+function render(filter='') {
+  const list = document.getElementById('fileList');
+  const f = filter.toLowerCase();
+  const shown = f ? allFiles.filter(x => x.name.toLowerCase().includes(f)) : allFiles;
+  if (!shown.length) {
+    list.innerHTML = `<div class="empty"><p>📡</p><p>${f ? 'No matches.' : 'No files yet.<br>Drop something above.'}</p></div>`;
+    return;
+  }
+  list.innerHTML = shown.map(file => `
+    <div class="file-card">
+      <div class="ficon t-${cat(file.name)}">${icon(file.name)}</div>
+      <div class="finfo">
+        <div class="fname" title="${file.name}">${file.name}</div>
+        <div class="fmeta">${fmt(file.metadata?.size)} · ${fmtDate(file.created_at)}</div>
+      </div>
+      <div class="factions">
+        <button class="ibtn" title="Download" onclick="downloadFile('${encodeURIComponent(file.name)}')">⬇</button>
+        <button class="ibtn del" title="Delete" onclick="deleteFile('${encodeURIComponent(file.name)}')">✕</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function updateStorage() {
+  const total = allFiles.reduce((s,f) => s + (f.metadata?.size||0), 0);
+  const pct = Math.min(100, (total / (1024**3)) * 100);
+  document.getElementById('storBar').style.width = pct + '%';
+  document.getElementById('storUsed').textContent = fmt(total);
+}
+
+// ── upload ──
+async function uploadFiles(files) {
+  const wrap = document.getElementById('progressWrap');
+  const pbar = document.getElementById('pbar');
+  const lbl  = document.getElementById('progressLabel');
+  wrap.classList.add('active');
+
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    lbl.textContent = `Uploading ${i+1}/${files.length}: ${file.name}`;
+    pbar.style.width = ((i / files.length) * 100) + '%';
+
+    // unique name to avoid collisions: timestamp_originalname
+    const safeName = `${Date.now()}_${file.name}`;
+
+    const r = await fetch(`${API}/object/${BUCKET}/${encodeURIComponent(safeName)}`, {
+      method:'POST',
+      headers:{...HDR,'Content-Type': file.type || 'application/octet-stream','x-upsert':'true'},
+      body: file
+    });
+
+    if (!r.ok) {
+      const err = await r.text();
+      toast(`Failed: ${file.name}`, 'err');
+      console.error(err);
+    } else {
+      toast(`Uploaded: ${file.name}`);
+    }
+  }
+
+  pbar.style.width = '100%';
+  lbl.textContent = `Done — ${files.length} file${files.length>1?'s':''} uploaded`;
+  setTimeout(() => wrap.classList.remove('active'), 2000);
+  await loadFiles();
+}
+
+// ── download ──
+async function downloadFile(encodedName) {
+  const name = decodeURIComponent(encodedName);
+  const url = `${API}/object/public/${BUCKET}/${encodedName}`;
+  // try public URL first, fallback to authenticated download
+  const a = document.createElement('a');
+  a.href = url; a.download = name.replace(/^\d+_/, ''); // strip timestamp prefix
+  a.target = '_blank';
+  a.click();
+}
+
+// ── delete ──
+async function deleteFile(encodedName) {
+  const name = decodeURIComponent(encodedName);
+  if (!confirm(`Delete "${name.replace(/^\d+_/,'')}"?`)) return;
+  const r = await fetch(`${API}/object/${BUCKET}/${encodedName}`, {
+    method:'DELETE', headers: HDR
+  });
+  if (r.ok) {
+    toast('Deleted');
+    allFiles = allFiles.filter(f => f.name !== name);
+    render(document.getElementById('searchInput').value);
+    updateStorage();
+    setConn(true, `Connected · ${allFiles.length} file${allFiles.length!==1?'s':''}`);
+  } else {
+    toast('Delete failed', 'err');
+  }
+}
+
+async function clearDone() {
+  if (!allFiles.length) return;
+  if (!confirm(`Delete all ${allFiles.length} files from Supabase?`)) return;
+  for (const f of allFiles) {
+    await fetch(`${API}/object/${BUCKET}/${encodeURIComponent(f.name)}`, {
+      method:'DELETE', headers: HDR
+    });
+  }
+  allFiles = [];
+  render();
+  updateStorage();
+  toast('All files deleted');
+  setConn(true, 'Connected · 0 files');
+}
+
+// ── drag & drop ──
+const drop = document.getElementById('drop');
+const fi   = document.getElementById('fileInput');
+
+drop.addEventListener('click', () => fi.click());
+fi.addEventListener('change', () => { if (fi.files.length) uploadFiles(fi.files); fi.value=''; });
+drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('over'); });
+drop.addEventListener('dragleave', () => drop.classList.remove('over'));
+drop.addEventListener('drop', e => { e.preventDefault(); drop.classList.remove('over'); if (e.dataTransfer.files.length) uploadFiles(e.dataTransfer.files); });
+
+// ── search ──
+document.getElementById('searchInput').addEventListener('input', e => render(e.target.value));
+
+// ── note ──
+const noteEl = document.getElementById('noteArea');
+noteEl.value = localStorage.getItem('dh_note') || '';
+noteEl.addEventListener('input', () => localStorage.setItem('dh_note', noteEl.value));
+function copyNote() { navigator.clipboard.writeText(noteEl.value).then(() => toast('Copied')); }
+function clearNote() { noteEl.value = ''; localStorage.removeItem('dh_note'); toast('Cleared'); }
+
+// ── init ──
+setConn(null, 'Connecting…');
+loadFiles();
+</script>
+</body>
+</html>
